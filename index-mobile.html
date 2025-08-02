@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="fa">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vintra AI - mobile version</title>
+  <style>
+    @font-face {
+    font-family: 'vazir';
+    src: url('Vazir.woff2') format('woff2'),
+        url('Vazir.woff') format('woff');
+    font-weight: normal;
+    font-style: normal;}
+    :root {
+        font-family: 'vazir';
+      --main-bg: #f7f7f7;
+      --main-fg: #222;
+      --bot-bg: #ecf0f1;
+      --user-bg: #3498db;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'vazir';
+      background-color: var(--main-bg);
+      color: var(--main-fg);
+      transition: background 0.3s, color 0.3s;
+    }
+
+    .dark-mode {
+        font-family: 'vazir';
+      --main-bg: #1e1e1e;
+      --main-fg: #f1f1f1;
+      --bot-bg: #444;
+      --user-bg: #2980b9;
+    }
+
+    .chat-container {
+        font-family: 'vazir';
+      display: flex;
+      flex-direction: column;
+      max-width: 600px;
+      height: 100vh;
+      margin: auto;
+      background: white;
+      border-radius: 0;
+      box-shadow: none;
+      overflow: hidden;
+    }
+
+    .dark-mode .chat-container {
+        font-family: 'vazir';
+      background: #2a2a2a;
+    }
+
+    .header {
+        font-family: 'vazir';
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #2ecc71;
+      color: white;
+      padding: 10px;
+    }
+
+    .logo {
+        font-family: 'vazir';
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .logo img {
+        font-family: 'vazir';
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+    }
+
+    .controls button {
+        font-family: 'vazir';
+      background: rgba(255,255,255,0.2);
+      color: white;
+      border: none;
+      border-radius: 5px;
+      padding: 5px 8px;
+      font-size: 14px;
+      margin-left: 5px;
+      cursor: pointer;
+    }
+
+    .chat-log {
+        font-family: 'vazir';
+      flex: 1;
+      padding: 15px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .message {
+        font-family: 'vazir';
+      max-width: 80%;
+      padding: 10px 15px;
+      border-radius: 10px;
+      word-wrap: break-word;
+      line-height: 1.6;
+      font-size: 16px;
+    }
+
+    .user {
+        font-family: 'vazir';
+      align-self: flex-end;
+      background: var(--user-bg);
+      color: white;
+      border-bottom-right-radius: 0;
+    }
+
+    .bot {
+        font-family: 'vazir';
+      align-self: flex-start;
+      background: var(--bot-bg);
+      color: var(--main-fg);
+      border-bottom-left-radius: 0;
+    }
+
+    .input-area {
+        font-family: 'vazir';
+      display: flex;
+      border-top: 1px solid #ccc;
+    }
+
+    input {
+        font-family: 'vazir';
+      flex: 1;
+      padding: 14px;
+      font-size: 16px;
+      border: none;
+      outline: none;
+    }
+
+    button.send {
+        font-family: 'vazir';
+      background: #2ecc71;
+      color: white;
+      border: none;
+      padding: 0 20px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+
+    @media (max-width: 600px) {
+      .chat-container {
+        font-family: 'vazir';
+        border-radius: 0;
+      }
+      .message {
+        font-size: 15px;
+        font-family: 'vazir';
+      }
+      .controls button {
+        font-family: 'vazir';
+        font-size: 12px;
+        padding: 5px;
+      }
+      input {
+        font-family: 'vazir';
+        font-size: 15px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<div class="chat-container">
+  <div class="header">
+    <div class="logo">
+      <img src="logo.png" alt="Vintra Logo">
+      <strong>Vintra AI</strong>
+    </div>
+    <div class="controls">
+      <button onclick="toggleDarkMode()">🌙</button>
+      <button onclick="clearChat()">🧼</button>
+      <button onclick="toggleLang()">🌐</button>
+    </div>
+  </div>
+  <div class="chat-log" id="chat-log"></div>
+  <div class="input-area">
+    <input type="text" id="user-input" placeholder="بنویس...">
+    <button class="send" onclick="sendMessage()">ارسال</button>
+  </div>
+</div>
+
+<script>
+let lang = localStorage.getItem("vintraLang") || "fa";
+let isDark = localStorage.getItem("vintraDark") === "true";
+
+const responses = {
+  fa: {
+    greeting: "سلام! چطور می‌تونم کمکت کنم؟ 😊",
+    bye: "خدانگهدار! 👋",
+    time: () => {
+      const now = new Date();
+      return `الان ساعت ${now.getHours()}:${String(now.getMinutes()).padStart(2, '0')} هست. ⏰`;
+    },
+    name: "من هوش مصنوعی وینترا هستم . چت بات شخصی شما! ساخته شده توسط شرکت اندین . سازنده : امیرعلی عابدینی",
+    mood: "من همیشه خوبم چون کد هستم! 😄",
+    unknown: "متوجه نشدم چی گفتی 😕 لطفاً واضح‌تر بگو.",
+  },
+  en: {
+    greeting: "Hello! How can I help you? 😊",
+    bye: "Goodbye! 👋",
+    ask1: "خورشید چند سیاره دارد؟" ,
+    ask2 : "پایتخت ایران چیست؟",
+    ask3 : "بلندترین کوه جهان چیست؟",
+    ask4 : "آب از چند عنصر تشکیل شده؟",
+    ask5 : "بزرگ‌ترین اقیانوس جهان کدام است؟",
+    ask6 : "اولین رییس‌جمهور آمریکا چه کسی بود؟",
+    res1 : "خورشید ۸ سیاره دارد.",
+    res2 : "پایتخت ایران تهران است.",
+    res3 : "اورست بلندترین کوه جهان است.",
+    res4 : "آب از دو عنصر هیدروژن و اکسیژن تشکیل شده است.",
+    res5 : "اقیانوس آرام بزرگ‌ترین اقیانوس جهان است.",
+    res6 : "جورج واشنگتن اولین رییس‌جمهور آمریکا بود.",
+    time: () => {
+      const now = new Date();
+      return `It's currently ${now.getHours()}:${String(now.getMinutes()).padStart(2, '0')}. ⏰`;
+    },
+    name: "I'm Vintra AI, your personal chatbot , made by ANDIN Company , creator : amir ali abedini 🤖",
+    mood: "I'm always good because I'm code! 😄",
+    unknown: "I didn’t understand. Please rephrase. 🤔",
+  }
+};
+
+
+function getBotResponse(message) {
+  const r = responses[lang];
+  message = message.toLowerCase();
+
+  if (message.includes("سلام") || message.includes("hi")) return r.greeting;
+  if (message.includes("خداحافظ") || message.includes("bye")) return r.bye;
+  if (message.includes("ساعت") || message.includes("time")) return r.time();
+  if (message.includes("اسمت چیه؟") || message.includes("what is your name?")) return r.name;
+  if (message.includes("خوبی") || message.includes("how are you")) return r.mood;
+  if (message.includes("خوبی") || message.includes("how are you")) return r.mood;
+  if (message.includes( "خورشید چند سیاره دارد؟")) return r.res1;
+  if (message.includes("پایتخت ایران چیست؟")) return r.res2;
+  if (message.includes("بلندترین کوه جهان چیست؟")) return r.res3;
+  if (message.includes( "آب از چند عنصر تشکیل شده؟")) return r.res4;
+  if (message.includes("بزرگ‌ترین اقیانوس جهان کدام است؟")) return r.res5;
+  if (message.includes("اولین رییس‌جمهور آمریکا چه کسی بود؟")) return r.res6;
+
+
+  return r.unknown;
+}
+
+function addMessage(content, type) {
+  const chatLog = document.getElementById("chat-log");
+  const msg = document.createElement("div");
+  msg.className = `message ${type}`;
+  msg.innerText = content;
+  chatLog.appendChild(msg);
+  chatLog.scrollTop = chatLog.scrollHeight;
+
+  const messages = JSON.parse(localStorage.getItem("vintraChat")) || [];
+  messages.push({ content, type });
+  localStorage.setItem("vintraChat", JSON.stringify(messages));
+}
+
+function sendMessage() {
+  const input = document.getElementById("user-input");
+  const message = input.value.trim();
+  if (message === "") return;
+
+  addMessage(lang === "fa" ? "تو: " + message : "You: " + message, "user");
+
+  input.value = "";
+  input.focus();
+
+  setTimeout(() => typeBotResponse(getBotResponse(message)), 400);
+}
+
+function typeBotResponse(text) {
+  const chatLog = document.getElementById("chat-log");
+  const msg = document.createElement("div");
+  msg.className = "message bot";
+  msg.innerText = "";
+  chatLog.appendChild(msg);
+  chatLog.scrollTop = chatLog.scrollHeight;
+
+  let prefix = lang === "fa" ? "Vintra AI: " : "Vintra AI: ";
+  let fullText = prefix + text;
+  let index = 0;
+  const typing = setInterval(() => {
+    msg.innerText = fullText.slice(0, index + 1);
+    index++;
+    chatLog.scrollTop = chatLog.scrollHeight;
+    if (index >= fullText.length) {
+      clearInterval(typing);
+
+      const messages = JSON.parse(localStorage.getItem("vintraChat")) || [];
+      messages.push({ content: msg.innerText, type: "bot" });
+      localStorage.setItem("vintraChat", JSON.stringify(messages));
+    }
+  }, 30);
+}
+
+function loadChatHistory() {
+  const messages = JSON.parse(localStorage.getItem("vintraChat")) || [];
+  messages.forEach(msg => addMessage(msg.content, msg.type));
+}
+
+function clearChat() {
+  if (confirm(lang === "fa" ? "مطمئنی که می‌خوای پاک کنی؟" : "Are you sure you want to clear the chat?")) {
+    localStorage.removeItem("vintraChat");
+    document.getElementById("chat-log").innerHTML = "";
+  }
+}
+
+function toggleDarkMode() {
+  document.body.classList.toggle("dark-mode");
+  const isDarkNow = document.body.classList.contains("dark-mode");
+  localStorage.setItem("vintraDark", isDarkNow);
+}
+
+function toggleLang() {
+  lang = lang === "fa" ? "en" : "fa";
+  localStorage.setItem("vintraLang", lang);
+  alert(lang === "fa" ? "زبان روی فارسی تنظیم شد" : "Language set to English");
+}
+
+document.getElementById("user-input").addEventListener("keydown", function (e) {
+  if (e.key === "Enter") sendMessage();
+});
+
+window.onload = () => {
+  if (isDark) document.body.classList.add("dark-mode");
+  loadChatHistory();
+};
+</script>
+
+</body>
+</html>
